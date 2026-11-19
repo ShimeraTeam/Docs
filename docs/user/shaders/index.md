@@ -172,7 +172,7 @@ See [Comparison with Manual Chaining](../effect_pipeline_builder.md#comparison-w
 
 ## Available Effects
 
-Shimera provides **10 effects**:
+Shimera provides **11 effects**:
 
 ### Color Adjustments
 - [**Brightness**](./brightness.md) - Brighten or darken the entire image
@@ -188,9 +188,8 @@ Shimera provides **10 effects**:
 - [**Pixelisation**](./pixelisation.md) - Reduce the image to blocky pixels for a retro look
 - [**Bloom**](./bloom.md) - Make bright areas glow
 
-### Not Yet Ported to the New API
-This effect existed in the previous version of the library and has not been rewritten yet. Its page still describes the previous API.
-- [**Atmospheric Scattering**](./atmospheric_scattering.md) - Physically-inspired planetary atmosphere (3D, depth-aware)
+### 3D Effects (Depth Buffer Required)
+- [**Atmospheric Scattering**](./atmospheric_scattering.md) - Physically based sky and atmosphere: planets seen from space, or a sky over a flat world
 
 ::: info Renamed or merged effects
 Grayscale is now `Saturation` with a factor of `0.0`, HDR Bloom became [Bloom](./bloom.md), and Colorshift became [Color Tint](./color_tint.md).
@@ -198,16 +197,20 @@ Grayscale is now `Saturation` with a factor of `0.0`, HDR Bloom became [Bloom](.
 
 ## Host Compatibility
 
-Every effect is screen-space and works with every host target:
+Every screen-space effect works with every host target:
 
 - ✅ **SFML 3** (`SfmlTarget`)
 - ✅ **raylib** (`RaylibTarget`)
 - ✅ **SDL3** (`SdlTarget`, with the `"opengl"` renderer driver)
 - ✅ **OpenGL** (`GlfwTarget`: GLFW, SDL in OpenGL mode, or any current OpenGL context)
 
+[Atmospheric Scattering](./atmospheric_scattering.md) is the exception: it reads the scene's depth buffer, which only `RaylibTarget` and `GlfwTarget` provide (created with `samplableDepth = true`).
+
 ## Shader Sources
 
 Effect shaders are written in [Slang](https://shader-slang.org/) and live in `res/shader/postprocessing/`. At build time, xmake compiles each `.slang` file to GLSL 330 in `res/shader/generated/`, which is what Shimera loads at runtime. All effects share the same fullscreen vertex shader, `postprocess.slang`.
+
+Effects too large for a single file live in their own folder under `res/shader/multi_layered/`, such as `atmospheric_scattering/`: its `passes/` are the entry points, built on shared modules (`core/`, `integrate/`) that they `import`.
 
 ## Next Steps
 

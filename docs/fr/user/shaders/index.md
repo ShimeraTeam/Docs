@@ -173,7 +173,7 @@ Voir [Comparaison avec le chaînage manuel](../effect_pipeline_builder.md#compar
 
 ## Effets disponibles
 
-Shimera fournit **10 effets** :
+Shimera fournit **11 effets** :
 
 ### Réglages de couleur
 - [**Brightness**](./brightness.md) - Éclaircir ou assombrir toute l'image
@@ -189,9 +189,8 @@ Shimera fournit **10 effets** :
 - [**Pixelisation**](./pixelisation.md) - Réduire l'image en gros pixels pour un rendu rétro
 - [**Bloom**](./bloom.md) - Faire briller les zones lumineuses
 
-### Pas encore portés sur la nouvelle API
-Cet effet existait dans la version précédente de la bibliothèque et n'a pas encore été réécrit. Sa page décrit encore l'ancienne API.
-- [**Atmospheric Scattering**](./atmospheric_scattering.md) - Atmosphère planétaire d'inspiration physique (3D, utilise la profondeur)
+### Effets 3D (depth buffer requis)
+- [**Atmospheric Scattering**](./atmospheric_scattering.md) - Ciel et atmosphère physiquement réalistes : planètes vues de l'espace, ou ciel au-dessus d'un monde plat
 
 ::: info Effets renommés ou fusionnés
 Grayscale correspond maintenant à `Saturation` avec un facteur de `0.0`, HDR Bloom est devenu [Bloom](./bloom.md), et Colorshift est devenu [Color Tint](./color_tint.md).
@@ -199,16 +198,20 @@ Grayscale correspond maintenant à `Saturation` avec un facteur de `0.0`, HDR Bl
 
 ## Compatibilité avec les hôtes
 
-Tous les effets travaillent dans l'espace écran et fonctionnent avec toutes les cibles hôtes :
+Tous les effets en espace écran fonctionnent avec toutes les cibles hôtes :
 
 - ✅ **SFML 3** (`SfmlTarget`)
 - ✅ **raylib** (`RaylibTarget`)
 - ✅ **SDL3** (`SdlTarget`, avec le driver de renderer `"opengl"`)
 - ✅ **OpenGL** (`GlfwTarget` : GLFW, SDL en mode OpenGL, ou n'importe quel contexte OpenGL actif)
 
+[Atmospheric Scattering](./atmospheric_scattering.md) fait exception : il lit le depth buffer de la scène, que seuls `RaylibTarget` et `GlfwTarget` fournissent (créés avec `samplableDepth = true`).
+
 ## Sources des shaders
 
 Les shaders des effets sont écrits en [Slang](https://shader-slang.org/) et se trouvent dans `res/shader/postprocessing/`. À la compilation, xmake compile chaque fichier `.slang` en GLSL 330 dans `res/shader/generated/`, et c'est ce que Shimera charge à l'exécution. Tous les effets partagent le même vertex shader plein écran, `postprocess.slang`.
+
+Les effets trop grands pour un seul fichier ont leur propre dossier dans `res/shader/multi_layered/`, comme `atmospheric_scattering/` : ses `passes/` sont les points d'entrée, construits sur des modules partagés (`core/`, `integrate/`) qu'elles importent avec `import`.
 
 ## Pour aller plus loin
 
