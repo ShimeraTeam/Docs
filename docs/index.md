@@ -1,5 +1,23 @@
-# **Shimera**
+---
+layout: home
 
-The SHIMERA project is a library, also referred to as an _SDK_ ("_software development kit_"), designed to allow its user (mainly technicians) to implement visual effects on top of their graphical project.
+hero:
+  name: Shimera
+  tagline: "A C++ SDK for post-processing effects and material shaders, built on top of the render loop you already have: SFML 3, raylib, SDL3 or plain OpenGL."
+  actions:
+    - theme: brand
+      text: Get started
+      link: /user/
 
-The final goal of the project is to enable any graphical project, regardless of its architecture, to integrate SHIMERA within its operational loop. Additionally, the range of available visual effects is not limited to any particular software industry.
+features:
+  - icon: 📘
+    title: User documentation
+    details: Install Shimera, plug it into your SFML, raylib, SDL3 or OpenGL project, and build effect pipelines from the shader library.
+    link: /user/
+    linkText: Read the user guide
+  - icon: 🛠️
+    title: Contributor documentation
+    details: Architecture, code standards, git workflow, testing and roadmap. Everything you need to work on Shimera itself.
+    link: /contributor/
+    linkText: Read the contributor guide
+---
