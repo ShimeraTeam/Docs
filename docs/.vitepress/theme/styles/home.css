@@ -1,54 +1,28 @@
-/* Shimera brand colors, taken from the logo's concentric green rings
-   (pale mint outer ring → bright green inner ring). */
-:root {
-  --shimera-mint: #c9f5d3;
-  --shimera-light: #9eeeb3;
-  --shimera-green: #6ee68b;
+/* Home page layout (hero + feature cards). Colors come from brand.css and the palette. */
 
-  /* Darker greens in light mode so links and buttons stay readable on white */
-  --vp-c-brand-1: #16a34a;
-  --vp-c-brand-2: #15803d;
-  --vp-c-brand-3: #16a34a;
-  --vp-c-brand-soft: rgba(110, 230, 139, 0.16);
-
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #4ade80 10%, #22c55e 50%, #15803d 95%);
-
-  --vp-home-hero-image-background-image: linear-gradient(-45deg, var(--shimera-green) 40%, var(--shimera-mint) 60%);
-  --vp-home-hero-image-filter: blur(44px);
-
-  --vp-button-brand-text: #ffffff;
-}
-
-.dark {
-  --vp-c-brand-1: var(--shimera-green);
-  --vp-c-brand-2: var(--shimera-light);
-  --vp-c-brand-3: #4ade80;
-  --vp-c-brand-soft: rgba(110, 230, 139, 0.14);
-
-  --vp-home-hero-name-background: linear-gradient(120deg, var(--shimera-mint) 5%, var(--shimera-light) 40%, var(--shimera-green) 90%);
-  --vp-button-brand-text: #052e16;
-  --vp-button-brand-hover-text: #052e16;
-  --vp-button-brand-active-text: #052e16;
-}
-
-@media (min-width: 640px) {
-  :root { --vp-home-hero-image-filter: blur(56px); }
-}
-
-@media (min-width: 960px) {
-  :root { --vp-home-hero-image-filter: blur(68px); }
-}
-
-/* Feature cards: subtle lift on hover */
+/* Feature cards: subtle lift on hover, same highlight for keyboard focus */
 .VPFeatures .VPFeature {
   transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
 }
 
-.VPFeatures .VPLink.link:hover .VPFeature {
+.VPFeatures .VPLink.link:hover .VPFeature,
+.VPFeatures .VPLink.link:focus-visible .VPFeature {
   transform: translateY(-3px);
   border-color: var(--vp-c-brand-1);
   box-shadow: 0 10px 30px -12px var(--vp-c-brand-soft);
+}
+
+.VPFeatures .VPLink.link:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .VPFeatures .VPLink.link:hover .VPFeature,
+  .VPFeatures .VPLink.link:focus-visible .VPFeature {
+    transform: none;
+  }
 }
 
 /* Home page: fit hero + cards in a single screen on desktop */
@@ -116,6 +90,34 @@
   .VPHome .VPHero .main .actions { padding-top: 1.25rem; }
   .VPHome .VPFeatures .VPFeature .box { padding: 20px 24px; }
   .VPHome .VPFeatures .VPFeature .icon { margin-bottom: 12px; }
+}
+
+/* License notice at the bottom of the home page, centered, with the same
+   side padding as VitePress' .VPFeatures. */
+.home-license {
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+@media (min-width: 40rem) {
+  .home-license { padding: 0 3rem; }
+}
+
+@media (min-width: 60rem) {
+  .home-license { padding: 0 4rem; }
+
+  /* The home fills the screen (see above): the free space is split between
+     above the hero and above the notice, so hero + cards stay centered and
+     the notice sits at the bottom of the page. */
+  .VPContent.is-home .VPHome {
+    padding-bottom: 1.5rem;
+  }
+  .VPContent.is-home .VPHome .VPHero {
+    margin-top: auto;
+  }
+  .home-license {
+    margin-top: auto;
+  }
 }
 
 /* The home pages have no Markdown body: drop the empty content block so

@@ -10,12 +10,12 @@ hero:
       link: /fr/user/
 
 features:
-  - icon: 📘
+  - icon: '<span aria-hidden="true">📘</span>'
     title: Documentation utilisateur
     details: Installez Shimera, branchez-le sur votre projet SFML, raylib, SDL3 ou OpenGL, et construisez des pipelines d'effets à partir de la bibliothèque de shaders.
     link: /fr/user/
     linkText: Lire le guide utilisateur
-  - icon: 🛠️
+  - icon: '<span aria-hidden="true">🛠️</span>'
     title: Documentation contributeur
     details: Architecture, standards de code, workflow git, tests et roadmap. Tout ce qu'il faut pour travailler sur Shimera.
     link: /fr/contributor/

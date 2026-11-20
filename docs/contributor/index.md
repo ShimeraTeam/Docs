@@ -1,4 +1,4 @@
-# DevDoc
+# Contributor Documentation
 
 This section is reserved for developer documentation.
 

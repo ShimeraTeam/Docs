@@ -1,0 +1,5 @@
+/* Order matters: the palette overrides the default theme and brand tokens. */
+@import './brand.css';
+@import './palette.css';
+@import './sidebar.css';
+@import './home.css';
