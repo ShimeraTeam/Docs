@@ -3,6 +3,8 @@ import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import { useData } from 'vitepress';
 import { createMermaidRenderer } from 'vitepress-mermaid-renderer';
+import './style.css';
+import HeroShowcase from './components/HeroShowcase.vue';
 
 export default {
   extends: DefaultTheme,
@@ -43,6 +45,8 @@ export default {
        );
        return () => h(DefaultTheme.Layout, null, {
          'doc-footer-before': licenseNotice,
+         // Rotating shader demos in place of a static hero image.
+         'home-hero-image': () => h(HeroShowcase),
        });
      },
    }),
