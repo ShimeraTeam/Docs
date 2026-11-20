@@ -1,6 +1,6 @@
 import { computed, reactive, watch } from 'vue'
 import { useData } from 'vitepress'
-import { STORAGE_KEY, VITEPRESS_APPEARANCE_KEY } from './palette-head.mts'
+import { STORAGE_KEY, VITEPRESS_APPEARANCE_KEY } from './head.mts'
 
 /**
  * Appearance palette: replaces VitePress' light/dark switch.
@@ -15,17 +15,19 @@ import { STORAGE_KEY, VITEPRESS_APPEARANCE_KEY } from './palette-head.mts'
  */
 
 export type Mode = 'light' | 'dark' | 'amoled'
-export type Accent = 'indigo' | 'cyan' | 'green' | 'amber' | 'rose' | 'violet'
+export type Accent = 'shimera' | 'indigo' | 'cyan' | 'amber' | 'rose' | 'violet'
 export type Preset = 'high-contrast' | 'sepia'
-
 
 export const MODES: Mode[] = ['light', 'dark', 'amoled']
 
-/** Swatch = the 500 shade of each accent, only used to draw the color button. */
+/** Default accent: the Shimera logo green. */
+export const DEFAULT_ACCENT: Accent = 'shimera'
+
+/** Swatch = a mid shade of each accent, only used to draw the color button. */
 export const ACCENTS: { id: Accent; swatch: string }[] = [
+  { id: 'shimera', swatch: '#6ee68b' },
   { id: 'indigo', swatch: '#646cff' },
   { id: 'cyan', swatch: '#06b6d4' },
-  { id: 'green', swatch: '#22c55e' },
   { id: 'amber', swatch: '#f59e0b' },
   { id: 'rose', swatch: '#f43f5e' },
   { id: 'violet', swatch: '#8b5cf6' },
@@ -51,6 +53,8 @@ function load() {
   loaded = true
   try {
     Object.assign(state, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'))
+    // Drop an accent that no longer exists (e.g. the former "green").
+    if (state.accent && !ACCENTS.some((a) => a.id === state.accent)) delete state.accent
   } catch {
     // Corrupted storage: start from the defaults.
   }
@@ -111,7 +115,7 @@ export function usePalette() {
     mode: computed<Mode | null>(() =>
       state.preset ? null : state.mode ?? (isDark.value ? 'dark' : 'light')
     ),
-    accent: computed<Accent | null>(() => (state.preset ? null : state.accent ?? 'indigo')),
+    accent: computed<Accent | null>(() => (state.preset ? null : state.accent ?? DEFAULT_ACCENT)),
     preset: computed(() => state.preset ?? null),
     setMode(mode: Mode) {
       state.mode = mode

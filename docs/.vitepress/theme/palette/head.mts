@@ -14,6 +14,6 @@ var p={'high-contrast':true,sepia:false};
 var dark=s.preset in p?p[s.preset]:s.mode?s.mode!=='light':null;
 if(dark!==null){d.classList.toggle('dark',dark);localStorage.setItem('${VITEPRESS_APPEARANCE_KEY}',dark?'dark':'light');}
 if(s.mode==='amoled'&&!s.preset)d.setAttribute('data-amoled','');
-if(s.accent&&!s.preset)d.setAttribute('data-accent',s.accent);
+if(/^(shimera|indigo|cyan|amber|rose|violet)$/.test(s.accent)&&!s.preset)d.setAttribute('data-accent',s.accent);
 if(s.preset)d.setAttribute('data-preset',s.preset);
 }catch(e){}})()`

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * Replaces VitePress' `VPNavAppearance.vue` (see the alias in config.mts), so
- * the palette shows up everywhere the light/dark switch used to be:
- * - nav bar (`row` false): palette icon button + popover;
+ * Replaces VitePress' `VPNavAppearance.vue` (see the alias in config/index.mts),
+ * so the palette shows up everywhere the light/dark switch used to be:
+ * - nav bar (`row` false): palette icon button + disclosure panel;
  * - `⋯` menu (`row`) and mobile nav screen (`row` + `screen`): inline panel.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
-import { useData } from 'vitepress'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { useData, useRoute } from 'vitepress'
 import { useNavOverflow } from 'vitepress/dist/client/theme-default/composables/nav-overflow.js'
-import { ACCENTS, MODES, PRESETS, usePalette, type Accent, type Mode, type Preset } from '../palette'
+import { ACCENTS, MODES, PRESETS, usePalette, type Accent, type Mode, type Preset } from '../palette/state'
 
 const props = defineProps<{ row?: boolean; screen?: boolean }>()
 
@@ -28,7 +28,7 @@ const t = computed(() =>
         colors: 'Couleurs',
         presets: 'Préréglages',
         modes: { light: 'Clair', dark: 'Sombre', amoled: 'AMOLED' } as Record<Mode, string>,
-        accents: { indigo: 'Indigo', cyan: 'Cyan', green: 'Vert', amber: 'Ambre', rose: 'Rose', violet: 'Violet' } as Record<Accent, string>,
+        accents: { shimera: 'Shimera', indigo: 'Indigo', cyan: 'Cyan', amber: 'Ambre', rose: 'Rose', violet: 'Violet' } as Record<Accent, string>,
         presetNames: { 'high-contrast': 'Haut contraste', sepia: 'Sépia' } as Record<Preset, string>,
       }
     : {
@@ -37,7 +37,7 @@ const t = computed(() =>
         colors: 'Color themes',
         presets: 'Theme presets',
         modes: { light: 'Light', dark: 'Dark', amoled: 'AMOLED' } as Record<Mode, string>,
-        accents: { indigo: 'Indigo', cyan: 'Cyan', green: 'Green', amber: 'Amber', rose: 'Rose', violet: 'Violet' } as Record<Accent, string>,
+        accents: { shimera: 'Shimera', indigo: 'Indigo', cyan: 'Cyan', amber: 'Amber', rose: 'Rose', violet: 'Violet' } as Record<Accent, string>,
         presetNames: { 'high-contrast': 'High contrast', sepia: 'Sepia' } as Record<Preset, string>,
       }
 )
@@ -78,6 +78,10 @@ onMounted(() => {
 })
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown))
 
+// Close the panel when navigating to another page.
+const route = useRoute()
+watch(() => route.path, () => close())
+
 const setRoot = (el: unknown) => {
   rootEl.value = el as HTMLElement | null
   overflow?.setClusterEl('appearance', el as HTMLElement | null)
@@ -99,7 +103,6 @@ const setRoot = (el: unknown) => {
       class="trigger"
       :aria-label="t.button"
       :title="t.button"
-      aria-haspopup="true"
       :aria-expanded="open"
       :aria-controls="panelId"
       @click="toggle"
@@ -159,7 +162,7 @@ const setRoot = (el: unknown) => {
             :aria-pressed="palette.accent.value === a.id"
             @click="palette.setAccent(a.id)"
           >
-            <svg v-if="palette.accent.value === a.id" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <svg v-if="palette.accent.value === a.id" viewBox="0 0 24 24" width="14" height="14" fill="none" :stroke="a.id === 'shimera' ? '#052e16' : '#fff'" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
               <path d="M20 6 9 17l-5-5" />
             </svg>
           </button>
