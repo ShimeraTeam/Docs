@@ -1,318 +1,250 @@
-# Guide d'Installation - Shimera
+# Installation
 
-Ce guide couvre toutes les méthodes pour installer et intégrer la bibliothèque Shimera dans votre projet.
-
-## Table des matières
-
-- [Prérequis](#prérequis)
-- [Compilation de la bibliothèque](#compilation-de-la-bibliothèque)
-- [Méthodes d'installation](#méthodes-dinstallation)
-  - [Installation système](#installation-système)
-  - [Installation locale](#installation-locale)
-  - [Sous-module Git](#sous-module-git)
-- [Options de compilation](#options-de-compilation)
+Cette page explique comment ajouter Shimera à votre projet à partir d'une release précompilée. Vous téléchargez une archive, vous indiquez son emplacement à votre build, et vous compilez. Vous n'avez pas besoin de compiler Shimera vous-même.
 
 ## Prérequis
 
-### Logiciels requis
+- Un compilateur C++20 : MSVC sous Windows, GCC ou Clang sous Linux.
+- [xmake](https://xmake.io/), qui télécharge GLEW et votre bibliothèque hôte pour vous.
+- Un GPU compatible OpenGL 3.3 ou supérieur.
 
-- **Compilateur C++** : GCC 7+ ou Clang 5+
-- **Standard C++** : C++17 ou supérieur
-- **Système de build** : [xmake](https://xmake.io/) 2.5+
-- **OpenGL** : Version 3.3 ou supérieure
+## Installer
 
-### Bibliothèques requises
+### 1. Télécharger la release
 
-- **GLEW** (OpenGL Extension Wrangler Library)
+Ouvrez la [dernière release](https://github.com/ShimeraTeam/Shimera/releases/latest) et téléchargez l'archive qui correspond à votre bibliothèque hôte, à votre système et à votre architecture :
 
-#### Installation des prérequis
-
-```bash
-sudo apt update
-sudo apt install build-essential libglew-dev git
-
-# Installer xmake
-curl -fsSL https://xmake.io/shget.text | bash
+```
+shimera-<version>-<host>-<system>-<arch>
 ```
 
-## Compilation de la bibliothèque
+| Partie | Valeurs |
+|--------|---------|
+| `<host>` | `sfml` (SFML 3), `raylib`, `sdl` (SDL3), `glfw` (OpenGL pur : GLFW, SDL en mode OpenGL, ...) |
+| `<system>` | `windows` (`.zip`) ou `linux` (`.tar`) |
+| `<arch>` | `x64`, ou `x86` pour les builds Windows 32 bits |
 
-### 1. Cloner le dépôt
+Par exemple, un jeu SFML sous Windows 64 bits utilise `shimera-0.6.1-sfml-windows-x64.zip`.
 
-```bash
-git clone https://github.com/yourusername/shimera.git
-cd shimera
+### 2. L'extraire dans votre projet
+
+Extrayez l'archive dans un dossier `libs/` de votre projet. Sous Linux, utilisez `tar -xf shimera-0.6.1-sfml-linux-x64.tar`. Vous obtenez :
+
+```
+my_game/
+  libs/
+    shimera-0.6.1/
+      include/  en-têtes, à commencer par shimera.hpp
+      lib/      bibliothèques statiques, release et debug (-d)
+      res/      shaders compilés
+      bin/      symboles de debug (Windows uniquement)
+  src/
+    main.cpp
+  xmake.lua
 ```
 
-### 2. Configurer et compiler
+### 3. Configurer xmake.lua
 
-#### Bibliothèque statique (par défaut)
+Choisissez votre bibliothèque hôte et copiez son `xmake.lua`. Chacun lie deux bibliothèques Shimera, celle de votre hôte puis le cœur, dans cet ordre :
 
-```bash
-xmake
-```
+::: code-group
 
-Cela générera :
-- `build/linux/x86_64/release/libshimera.a`
+```lua [SFML]
+add_rules("mode.debug", "mode.release")
 
-#### Bibliothèque partagée
+add_requires("glew 2.2.0", "sfml 3.0.1")
 
-```bash
-xmake f --shared=y
-xmake
-```
-
-Cela générera :
-- `build/linux/x86_64/release/libshimera.so`
-
-### 3. Compiler les exemples (optionnel)
-
-```bash
-# Compiler tous les exemples
-xmake build
-
-# Compiler un exemple spécifique
-cd examples/sfml
-xmake build -P .
-```
-
-## Méthodes d'installation
-
-### Installation système
-
-Installez Shimera globalement sur votre système pour l'utiliser dans plusieurs projets.
-
-#### Installation
-
-```bash
-cd shimera
-
-# Compiler la bibliothèque
-xmake
-
-# Installer (nécessite sudo)
-sudo xmake install
-
-# Ou spécifier le préfixe d'installation
-xmake install -o /usr/local
-```
-
-#### Fichiers installés
-
-- En-têtes : `/usr/local/include/`
-  - `Framebuffer.h`
-  - `PostProcessingQuad.h`
-  - `glUtils.h`
-  - `shimera.h`
-  - `uniform/Uniform.hpp`
-  - `uniform/Vec4.hpp`
-- Bibliothèque : `/usr/local/lib/libshimera.a` (ou `.so` si partagée)
-
-#### Utilisation dans votre projet
-
-**xmake.lua :**
-```lua
-add_requires("glew")
-
-target("myapp")
+target("my_game")
     set_kind("binary")
+    set_languages("c++20")
     add_files("src/*.cpp")
-    add_packages("glew")
+    add_packages("glew", "sfml")
 
-    -- Shimera installé système
-    add_includedirs("/usr/local/include")
-    add_linkdirs("/usr/local/lib")
-    add_links("shimera")
+    add_includedirs("libs/shimera-0.6.1/include")
+    add_linkdirs("libs/shimera-0.6.1/lib")
+    add_defines("SHIMERA_STATIC") -- les bibliothèques de la release sont statiques
+    if is_mode("debug") then
+        add_links("shimera-sfml-d", "shimera-d")
+    else
+        add_links("shimera-sfml", "shimera")
+    end
+
+    -- Temporaire pour Shimera 0.6.x : charge les shaders depuis libs/shimera-0.6.1/res
+    if is_plat("windows") then
+        add_ldflags("/INCREMENTAL:NO", {force = true}) -- permet au correctif ci-dessous de remplacer le chemin intégré
+    end
+    on_load(function (target)
+        local res = path.join(os.projectdir(), "libs", "shimera-0.6.1", "res")
+        local source = '#define SHIMERA_RES_DIR R"(' .. res .. ')"\n' .. [[
+#include <Resources.inl>
+using ShimeraPath = std::string (*)(const std::string&);
+ShimeraPath shimeraBuiltinShader = &shimera::builtinShader;
+ShimeraPath shimeraGeneratedShader = &shimera::generatedShader;
+ShimeraPath shimeraMaterialShader = &shimera::materialShader;
+]]
+        local file = path.join(target:autogendir(), "shimera_res.cpp")
+        if not os.isfile(file) or io.readfile(file) ~= source then -- réécrit seulement en cas de changement, pour garder des builds incrémentaux
+            io.writefile(file, source)
+        end
+        target:add("files", file)
+    end)
 ```
 
-#### Désinstallation
+```lua [raylib]
+add_rules("mode.debug", "mode.release")
 
-```bash
-cd shimera
-sudo xmake uninstall
-```
+add_requires("glew 2.2.0", "raylib 5.5")
 
----
-
-### Installation locale
-
-Copiez les fichiers de la bibliothèque directement dans le répertoire de votre projet.
-
-#### Configuration avec bibliothèque statique
-
-**Étape 1 : Compiler et copier les fichiers**
-
-```bash
-cd shimera
-xmake
-
-# Créer la structure de bibliothèque dans votre projet
-mkdir -p /chemin/vers/votre/projet/libs/shimera/include
-mkdir -p /chemin/vers/votre/projet/libs/shimera/lib
-
-# Copier les en-têtes
-cp -r include/* /chemin/vers/votre/projet/libs/shimera/include/
-
-# Copier la bibliothèque
-cp build/linux/x86_64/release/libshimera.a /chemin/vers/votre/projet/libs/shimera/lib/
-```
-
-**Étape 2 : Configurer votre projet**
-
-**xmake.lua :**
-```lua
-add_requires("glew")
-
-target("myapp")
+target("my_game")
     set_kind("binary")
+    set_languages("c++20")
     add_files("src/*.cpp")
-    add_packages("glew")
+    add_packages("glew", "raylib")
 
-    -- Shimera local (statique)
-    add_includedirs("libs/shimera/include")
-    add_linkdirs("libs/shimera/lib")
-    add_links("shimera")
+    add_includedirs("libs/shimera-0.6.1/include")
+    add_linkdirs("libs/shimera-0.6.1/lib")
+    add_defines("SHIMERA_STATIC") -- les bibliothèques de la release sont statiques
+    if is_mode("debug") then
+        add_links("shimera-raylib-d", "shimera-d")
+    else
+        add_links("shimera-raylib", "shimera")
+    end
+
+    -- Temporaire pour Shimera 0.6.x : charge les shaders depuis libs/shimera-0.6.1/res
+    if is_plat("windows") then
+        add_ldflags("/INCREMENTAL:NO", {force = true}) -- permet au correctif ci-dessous de remplacer le chemin intégré
+    end
+    on_load(function (target)
+        local res = path.join(os.projectdir(), "libs", "shimera-0.6.1", "res")
+        local source = '#define SHIMERA_RES_DIR R"(' .. res .. ')"\n' .. [[
+#include <Resources.inl>
+using ShimeraPath = std::string (*)(const std::string&);
+ShimeraPath shimeraBuiltinShader = &shimera::builtinShader;
+ShimeraPath shimeraGeneratedShader = &shimera::generatedShader;
+ShimeraPath shimeraMaterialShader = &shimera::materialShader;
+]]
+        local file = path.join(target:autogendir(), "shimera_res.cpp")
+        if not os.isfile(file) or io.readfile(file) ~= source then -- réécrit seulement en cas de changement, pour garder des builds incrémentaux
+            io.writefile(file, source)
+        end
+        target:add("files", file)
+    end)
 ```
 
-**Étape 3 : Utiliser dans le code**
+```lua [SDL3]
+add_rules("mode.debug", "mode.release")
+
+add_requires("glew 2.2.0", "libsdl3")
+
+target("my_game")
+    set_kind("binary")
+    set_languages("c++20")
+    add_files("src/*.cpp")
+    add_packages("glew", "libsdl3")
+
+    add_includedirs("libs/shimera-0.6.1/include")
+    add_linkdirs("libs/shimera-0.6.1/lib")
+    add_defines("SHIMERA_STATIC") -- les bibliothèques de la release sont statiques
+    if is_mode("debug") then
+        add_links("shimera-sdl-d", "shimera-d")
+    else
+        add_links("shimera-sdl", "shimera")
+    end
+
+    -- Temporaire pour Shimera 0.6.x : charge les shaders depuis libs/shimera-0.6.1/res
+    if is_plat("windows") then
+        add_ldflags("/INCREMENTAL:NO", {force = true}) -- permet au correctif ci-dessous de remplacer le chemin intégré
+    end
+    on_load(function (target)
+        local res = path.join(os.projectdir(), "libs", "shimera-0.6.1", "res")
+        local source = '#define SHIMERA_RES_DIR R"(' .. res .. ')"\n' .. [[
+#include <Resources.inl>
+using ShimeraPath = std::string (*)(const std::string&);
+ShimeraPath shimeraBuiltinShader = &shimera::builtinShader;
+ShimeraPath shimeraGeneratedShader = &shimera::generatedShader;
+ShimeraPath shimeraMaterialShader = &shimera::materialShader;
+]]
+        local file = path.join(target:autogendir(), "shimera_res.cpp")
+        if not os.isfile(file) or io.readfile(file) ~= source then -- réécrit seulement en cas de changement, pour garder des builds incrémentaux
+            io.writefile(file, source)
+        end
+        target:add("files", file)
+    end)
+```
+
+```lua [OpenGL (GLFW)]
+add_rules("mode.debug", "mode.release")
+
+add_requires("glew 2.2.0", "glfw 3.4")
+
+target("my_game")
+    set_kind("binary")
+    set_languages("c++20")
+    add_files("src/*.cpp")
+    add_packages("glew", "glfw") -- GLFW sert à votre fenêtre, Shimera ne l'utilise pas
+
+    add_includedirs("libs/shimera-0.6.1/include")
+    add_linkdirs("libs/shimera-0.6.1/lib")
+    add_defines("SHIMERA_STATIC") -- les bibliothèques de la release sont statiques
+    if is_mode("debug") then
+        add_links("shimera-glfw-d", "shimera-d")
+    else
+        add_links("shimera-glfw", "shimera")
+    end
+
+    -- Temporaire pour Shimera 0.6.x : charge les shaders depuis libs/shimera-0.6.1/res
+    if is_plat("windows") then
+        add_ldflags("/INCREMENTAL:NO", {force = true}) -- permet au correctif ci-dessous de remplacer le chemin intégré
+    end
+    on_load(function (target)
+        local res = path.join(os.projectdir(), "libs", "shimera-0.6.1", "res")
+        local source = '#define SHIMERA_RES_DIR R"(' .. res .. ')"\n' .. [[
+#include <Resources.inl>
+using ShimeraPath = std::string (*)(const std::string&);
+ShimeraPath shimeraBuiltinShader = &shimera::builtinShader;
+ShimeraPath shimeraGeneratedShader = &shimera::generatedShader;
+ShimeraPath shimeraMaterialShader = &shimera::materialShader;
+]]
+        local file = path.join(target:autogendir(), "shimera_res.cpp")
+        if not os.isfile(file) or io.readfile(file) ~= source then -- réécrit seulement en cas de changement, pour garder des builds incrémentaux
+            io.writefile(file, source)
+        end
+        target:add("files", file)
+    end)
+```
+
+:::
+
+Gardez les versions de packages ci-dessus : ce sont celles avec lesquelles les bibliothèques 0.6.1 ont été compilées. Pour un build Windows 32 bits, lancez `xmake f -a x86` une fois avant de compiler.
+
+::: warning Bloc temporaire pour la 0.6.x
+Les bibliothèques 0.6.x cherchent `res` dans le dossier où elles ont été compilées, sur la machine de build de la release. Le bloc à la fin de chaque `xmake.lua` leur fait lire `libs/shimera-0.6.1/res` depuis votre projet, quel que soit le dossier où votre programme démarre. Il disparaît dans une version future.
+
+Ce chemin est fixé dans votre programme à la compilation : le programme ne trouve donc ses shaders que sur l'ordinateur où il a été compilé. Si vous déplacez ou renommez le projet, relancez `xmake`.
+:::
+
+### 4. Compiler et lancer
+
+Dans le dossier de votre projet :
+
+```bash
+xmake # télécharge les packages au premier lancement, puis compile
+xmake run # lance votre programme
+```
+
+Pour compiler en debug, lancez `xmake f -m debug` une fois, puis `xmake` à nouveau.
+
+Dans votre code, incluez `shimera.hpp` et l'en-tête de votre host target :
 
 ```cpp
-#include <shimera.h>
-
-int main() {
-    Framebuffer fb(800, 600);
-    // ...
-}
+#include <shimera.hpp>
+#include <hosts/SfmlTarget.hpp> // ou RaylibTarget, SdlTarget, GlfwTarget
 ```
 
-#### Configuration avec bibliothèque partagée
+::: info Autres systèmes de build
+Shimera ne fournit pas de fichiers CMake ou Meson, mais n'importe quel système de build fonctionne. Ajoutez `include/` au chemin d'inclusion et `lib/` au chemin des bibliothèques, définissez `SHIMERA_STATIC`, compilez en C++20, et liez `shimera-<host>` puis `shimera` (avec `-d` en debug), suivis de GLEW (statique) et d'OpenGL. Sous Windows, utilisez le runtime C dynamique : `/MD` en release, `/MDd` en debug. Pour la 0.6.x, compilez aussi le fichier `shimera_res.cpp` qu'écrit le `xmake.lua` ci-dessus, et liez avec `/INCREMENTAL:NO` sous MSVC.
+:::
 
-**Étape 1 : Compiler en mode partagé**
+## Étapes suivantes
 
-```bash
-cd shimera
-xmake f --shared=y
-xmake
-```
-
-**Étape 2 : Copier les fichiers**
-
-```bash
-# Copier les en-têtes (identique à la version statique)
-cp -r include/* /chemin/vers/votre/projet/libs/shimera/include/
-
-# Copier la bibliothèque partagée
-cp build/linux/x86_64/release/libshimera.so /chemin/vers/votre/projet/libs/shimera/lib/
-```
-
-**Étape 3 : Configurer votre projet**
-
-**xmake.lua :**
-```lua
-add_requires("glew")
-
-target("myapp")
-    set_kind("binary")
-    add_files("src/*.cpp")
-    add_packages("glew")
-
-    -- Shimera local (partagé)
-    add_includedirs("libs/shimera/include")
-    add_linkdirs("libs/shimera/lib")
-    add_links("shimera")
-
-    -- Important : Ajouter le chemin d'exécution pour .so/.dll
-    add_rpathdirs("libs/shimera/lib")
-```
-
-**Alternative : Définir le chemin d'exécution**
-
-Si vous n'utilisez pas `add_rpathdirs()` de xmake :
-
-```bash
-# Linux
-export LD_LIBRARY_PATH=/chemin/vers/votre/projet/libs/shimera/lib:$LD_LIBRARY_PATH
-
-# Ou copier le .so à côté de votre exécutable
-cp libs/shimera/lib/libshimera.so ./build/
-```
-
----
-
-### Sous-module Git
-
-Recommandé pour les projets qui veulent compiler Shimera en même temps que leur code.
-
-#### Configuration
-
-**Étape 1 : Ajouter comme sous-module**
-
-```bash
-cd votre-projet
-git submodule add https://github.com/yourusername/shimera.git libs/shimera
-git submodule update --init --recursive
-```
-
-**Étape 2 : Configurer votre projet**
-
-**xmake.lua :**
-```lua
-add_requires("glew")
-
--- Inclure la bibliothèque shimera
-includes("libs/shimera")
-
-target("myapp")
-    set_kind("binary")
-    add_files("src/*.cpp")
-
-    -- Lier avec shimera
-    add_deps("shimera")
-    add_packages("glew")
-```
-
-**Étape 3 : Tout compiler**
-
-```bash
-xmake
-```
-
-Cela va automatiquement :
-1. Compiler la bibliothèque Shimera
-2. Lier votre projet avec elle
-
-#### Mettre à jour Shimera
-
-```bash
-cd libs/shimera
-git pull origin main
-cd ../..
-xmake -r  # Recompiler avec les derniers changements
-```
-
-#### Supprimer le sous-module
-
-```bash
-git submodule deinit libs/shimera
-git rm libs/shimera
-rm -rf .git/modules/libs/shimera
-```
-
----
-
-## Options de compilation
-
-### Type de bibliothèque
-
-```bash
-# Bibliothèque statique (par défaut)
-xmake
-
-# Bibliothèque partagée
-xmake f --shared=y
-xmake
-
-# Revenir à la version statique
-xmake f --shared=n
-xmake
-```
+Lisez le [Guide Utilisateur](./index.md) pour créer un contexte, un host target et votre premier pipeline d'effets.
