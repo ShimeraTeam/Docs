@@ -1,0 +1,29 @@
+/* Sidebar tweaks: decorative icons (see config/icons.mts) and indentation. */
+
+/* VitePress only indents levels 1+. A top-level group that contains
+   sub-groups (Shaders → Materials / Post-processing) gets the same indent
+   and guide line, so the sub-groups read as children of the group. */
+.VPSidebarItem.level-0 > .items:has(.VPSidebarItem.level-1 > .items) {
+  border-inline-start: 1px solid var(--vp-c-divider);
+  padding-inline-start: 0.75rem;
+}
+
+/* Two indent levels inside such a group: slightly tighter nested indent so
+   long names (e.g. "Atmospheric Scattering") stay on one line. */
+.VPSidebarItem.level-0 > .items .VPSidebarItem.level-1 > .items {
+  padding-inline-start: 0.75rem;
+}
+
+.sidebar-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 1.3em;
+  margin-inline-end: 0.4em;
+  font-style: normal;
+}
+
+.sidebar-icon svg {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}

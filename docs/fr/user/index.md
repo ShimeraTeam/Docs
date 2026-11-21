@@ -1,4 +1,4 @@
-# UserDoc
+# Documentation utilisateur
 
 Shimera est une bibliothèque C++ qui ajoute des effets de post-processing (flou, bloom, distorsion, vignette, ...) à un projet graphique existant, sans écrire une seule ligne de shader. Elle s'intègre à la boucle de rendu de la bibliothèque que vous utilisez déjà : **SFML 3**, **raylib**, **SDL3**, ou **OpenGL** directement (GLFW, ou tout autre moyen de créer un contexte OpenGL).
 
